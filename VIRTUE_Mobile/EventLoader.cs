@@ -165,8 +165,8 @@ public class EventLoader : MonoBehaviour
 
     private string filename = "NCDIS_Q2=100_Pythia8";
     private string lastFilename = "NCDIS_Q2=100_Pythia8";
-    private string targetVersion = "3.0.0";
-    private List<string> compatibleVersions = new List<string> { };
+    private string targetVersion = "3.1.0";
+    private List<string> compatibleVersions = new List<string> { "3.0.0" };
     private float timeStep = 0.05f;
     public float rate = 5; //speed of light is [rate] m/s
     public InputField rateField;
@@ -209,7 +209,7 @@ public class EventLoader : MonoBehaviour
         {
             filename = fileNames[0];
         }
-
+        
         StartCoroutine(LoadJSONFile());
 
     }
@@ -364,12 +364,22 @@ public class EventLoader : MonoBehaviour
             LogColorbar.SetActive(true);
             LinColorbar.SetActive(false);
             colorOn = true;
+            if (maxTexts[iEvt] != null || minTexts[iEvt] != null)
+            {
+                MaxText.text = maxTexts[iEvt].Value.ToString("0.0E0") + " " + energy_unit;
+                MinText.text = minTexts[iEvt].Value.ToString("0.0E0") + " " + energy_unit;
+            }
         }
         else if (color_bar.Contains("lin"))
         {
             LogColorbar.SetActive(false);
             LinColorbar.SetActive(true);
             colorOn = true;
+            if (maxTexts[iEvt] != null || minTexts[iEvt] != null)
+            {
+                MaxText.text = maxTexts[iEvt].Value.ToString("0.0E0") + " " + energy_unit;
+                MinText.text = minTexts[iEvt].Value.ToString("0.0E0") + " " + energy_unit;
+            }
         }
         else
         {
@@ -449,8 +459,8 @@ public class EventLoader : MonoBehaviour
 
     public IEnumerator LoadJSONFile(TextAsset jsonFile)
     {
-        loadingEvent = true;
 
+        loadingEvent = true;
         EventDataWrapper eventDataWrapper = null;
         errorText.text = "Reading event file";
         yield return null;
@@ -476,7 +486,7 @@ public class EventLoader : MonoBehaviour
         {
             errorText.text = "Loading events: 0% complete";
             ParseHeader(eventDataWrapper);
-
+            
             int numEvents = eventDataWrapper.events.Count;
             InitializeEventArrays(numEvents);
 
@@ -491,7 +501,7 @@ public class EventLoader : MonoBehaviour
             for (int i = 0; i < numEvents; i++)
             {
                 ParseEnergyScale(eventDataWrapper.events[i].event_data, i);
-
+                SetHUD();
 
                 (hitObjects[i], hitTime[i]) = CreateHitObjects(eventDataWrapper.events[i].hits);
                 yield return null;
@@ -516,6 +526,7 @@ public class EventLoader : MonoBehaviour
 
         start_time = Time.time;
         loadingEvent = false;
+        
         SetHUD();
         LoopAnimation();
     }
@@ -573,11 +584,11 @@ public class EventLoader : MonoBehaviour
                     CreateParticle(particleData, scale);
                 }
             }
-
+            SetHUD();
             for (int i = 0; i < numEvents; i++)
             {
                 ParseEnergyScale(eventDataWrapper.events[i].event_data, i);
-
+                SetHUD();
 
                 (hitObjects[i], hitTime[i]) = CreateHitObjects(eventDataWrapper.events[i].hits);
                 yield return null;

@@ -82,8 +82,8 @@ public class ComponentMaker : MonoBehaviour
     private float scale = 1.0f;
     private float lineThickness = 0.01f;
     public UnityEngine.UI.Text detectorText;
-    private string targetVersion = "3.0.0";
-    private List<string> compatibleVersions = new List<string> {};
+    private string targetVersion = "3.1.0";
+    private List<string> compatibleVersions = new List<string> { "3.0.0" };
     private List<string> fileNames = new List<string>();
     private List<string> displayNames = new List<string>();
     public TMP_Dropdown fileDropdown;
@@ -101,7 +101,7 @@ public class ComponentMaker : MonoBehaviour
     List<int> objectIndexes = new List<int>();
     private List<float> detectorPartAlphas = new List<float>();
     private string modelTextCache = "";
-
+    private GameObject activeModel;
 
 
     private List<string> acceptedExtensions = new List<string>
@@ -376,6 +376,7 @@ public class ComponentMaker : MonoBehaviour
         TagNthLevelChildren(myLoadedGameObject, "Detector", 1);
         myLoadedGameObject.SetActive(false);
         detectorParts.Add(myLoadedGameObject);
+        activeModel = myLoadedGameObject;
         loadingModel = false;
     }
 
@@ -431,27 +432,14 @@ public class ComponentMaker : MonoBehaviour
 
     public void ToggleMenagerie()
     {
+        if (activeModel == null)
+            return;
 
-        if (!menagerieActive)
-        {
-            // Deactivate detector parts
-            for (int i = 0; i < detectorParts.Count; i++)
-            {
-                detectorParts[i].SetActive(false);
-            }
-            menagerieActive = true;
-            modelText.text = "Show Model";
-        }
-        else
-        {
-            // Activate detector parts
-            for (int i = 0; i < detectorParts.Count; i++)
-            {
-                detectorParts[i].SetActive(true);
-            }
-            modelText.text = "Hide Model";
-            menagerieActive = false;
-        }
+        bool newState = !activeModel.activeSelf;
+        activeModel.SetActive(newState);
+
+        menagerieActive = !newState;
+        modelText.text = newState ? "Hide Model" : "Show Model";
     }
 
     public void LoadFile()
@@ -469,6 +457,7 @@ public class ComponentMaker : MonoBehaviour
 
     public void ResetModelState()
     {
+        activeModel = null;
         loadingModel = true;
         wireText.text = "Show Wireframe";
         wireOn = false;
@@ -530,9 +519,9 @@ public class ComponentMaker : MonoBehaviour
     public void buildSimModel()
     {
         ResetModelState();
-   
+
         int selectedIndex = fileDropdown.value;
-       
+
         string path = Path.Combine(UnityEngine.Application.streamingAssetsPath, "Models");
         string filePath = Path.Combine(path, filename);
 
@@ -540,158 +529,190 @@ public class ComponentMaker : MonoBehaviour
         {
             string fileExtension = Path.GetExtension(filePath).ToLower();
 
+            // ================= JSON MODEL =================
             if (fileExtension == ".json")
             {
                 StreamReader source = new StreamReader(filePath);
                 fileContents = source.ReadToEnd();
                 source.Close();
 
-                // Parse JSON file to EventDataWrapper class
-                ComponentListWrapper componentListWrapper = JsonUtility.FromJson<ComponentListWrapper>(fileContents);
+                ComponentListWrapper componentListWrapper =
+                    JsonUtility.FromJson<ComponentListWrapper>(fileContents);
 
-                String version = componentListWrapper.header.version;
+                string version = componentListWrapper.header.version;
 
                 if (String.Equals(version, targetVersion) || compatibleVersions.Contains(version))
                 {
-                    String unit = componentListWrapper.header.length_unit;
                     detectorText.text = componentListWrapper.header.detector;
 
-                    if (String.Equals(unit, "m"))
+                    switch (componentListWrapper.header.length_unit)
                     {
-                        scale = 1.0f;
-                    }
-                    else if (String.Equals(unit, "cm"))
-                    {
-                        scale = 0.01f;
-                    }
-                    else if (String.Equals(unit, "mm"))
-                    {
-                        scale = 0.001f;
+                        case "m":
+                            scale = 1.0f;
+                            break;
+                        case "cm":
+                            scale = 0.01f;
+                            break;
+                        case "mm":
+                            scale = 0.001f;
+                            break;
                     }
 
-                    scale = scale * componentListWrapper.header.scale;
+                    scale *= componentListWrapper.header.scale;
 
                     int detCount = 0;
+
                     var sortedComponents = componentListWrapper.components
                         .OrderBy(c => c.index == -1 ? int.MaxValue : c.index)
                         .ToList();
+
                     foreach (var data in sortedComponents)
                     {
+                        string name = data.name;
+                        int index = (data.index == -1) ? detCount : data.index;
 
-                        String name = data.name;
-                        int index = data.index;
-                        if (index == -1)
-                        {
-                            index = detCount;
-                        }
                         float[] position = data.position;
                         float[] eulerAngle = data.euler_angles_deg;
                         float[] rgba = data.color_rgba;
+
                         string typeLower = data.type.ToLowerInvariant();
+
                         if (typeLower.Contains("t"))
                         {
                             int sides = data.sides;
 
                             float[] rLeft = data.radii.left;
                             float[] rRight = data.radii.right;
+
+                            if (rLeft[0] == -1)
+                                rLeft = rRight;
+                            else if (rRight[0] == -1)
+                                rRight = rLeft;
+
                             float[] length = new float[2];
                             length[0] = data.length.inner;
                             length[1] = data.length.outer;
 
-                            if (rLeft[0] == -1)
-                            {
-                                rLeft = rRight;
-                            }
-                            else if (rRight[0] == -1)
-                            {
-                                rRight = rLeft;
-                            }
-
                             if (length[0] == -1)
-                            {
                                 length[0] = length[1];
-                            }
                             else if (length[1] == -1)
-                            {
                                 length[1] = length[0];
-                            }
 
-                            float offsetIn = data.inner_offset;
-
-                            MakeToroid(name, sides, position, rLeft, rRight, length, offsetIn, eulerAngle, rgba, componentListWrapper.components.Length - index);
+                            MakeToroid(
+                                name,
+                                sides,
+                                position,
+                                rLeft,
+                                rRight,
+                                length,
+                                data.inner_offset,
+                                eulerAngle,
+                                rgba,
+                                componentListWrapper.components.Length - index);
 
                             detCount++;
                         }
                         else if (typeLower.Contains("b"))
                         {
-                            float[] size = data.size;
-
-                            MakeBlock(name, position, size, eulerAngle, rgba, componentListWrapper.components.Length - index, true);
+                            MakeBlock(
+                                name,
+                                position,
+                                data.size,
+                                eulerAngle,
+                                rgba,
+                                componentListWrapper.components.Length - index,
+                                true);
 
                             detCount++;
                         }
                         else if (typeLower.Contains("s"))
                         {
-                            float[] size = data.size;
-
-                            MakeSpheroid(name, position, size, eulerAngle, rgba, componentListWrapper.components.Length - index);
+                            MakeSpheroid(
+                                name,
+                                position,
+                                data.size,
+                                eulerAngle,
+                                rgba,
+                                componentListWrapper.components.Length - index);
 
                             detCount++;
                         }
-
                     }
+
+                    // Store original alpha values for tour mode
                     detectorPartAlphas.Clear();
 
-                    foreach (var go in detectorParts)
+                    foreach (GameObject go in detectorParts)
                     {
-                        var renderer = go.GetComponent<Renderer>();
+                        Renderer renderer = go.GetComponent<Renderer>();
+
                         if (renderer != null)
-                        {
                             detectorPartAlphas.Add(renderer.material.color.a);
-                        }
                         else
-                        {
                             detectorPartAlphas.Add(0f);
-                        }
                     }
+
+                    // Create a parent object for hiding/showing the entire model.
+                    // IMPORTANT: detectorParts is left unchanged so tour mode still
+                    // has access to every individual detector component.
+                    GameObject jsonRoot = new GameObject(componentListWrapper.header.detector);
+
+                    foreach (GameObject part in detectorParts)
+                    {
+                        part.transform.SetParent(jsonRoot.transform, true);
+                    }
+
+                    activeModel = jsonRoot;
                 }
                 else
                 {
                     errorText.text = "Model JSON File not version " + targetVersion;
-                    UnityEngine.Debug.LogError("Model JSON File not version " + targetVersion);
+                    UnityEngine.Debug.LogError(errorText.text);
                 }
-
             }
+
+            // ================= SCENE MODEL =================
             else if (objectIndexes.Contains(selectedIndex))
             {
                 GameObject modelsParent = GameObject.Find("Models");
+
                 if (modelsParent != null)
                 {
-                    Transform selectedObject = modelsParent.transform.GetChild(objectIndexes.IndexOf(selectedIndex));
+                    Transform selectedObject =
+                        modelsParent.transform.GetChild(objectIndexes.IndexOf(selectedIndex));
+
                     if (selectedObject != null)
                     {
                         selectedObject.gameObject.SetActive(true);
                         detectorText.text = selectedObject.name;
+
                         try
                         {
                             TagChildrenAtLevel(selectedObject.transform, "Detector", 1, 0);
                         }
                         catch { }
+
+                        activeModel = selectedObject.gameObject;
                     }
                 }
             }
+
+            // ================= FBX MODEL =================
             else
             {
                 detectorText.text = Path.GetFileNameWithoutExtension(filename);
                 detectorPartAlphas.Clear();
+
                 LoadFBXModel(filePath);
+                // activeModel is assigned in OnLoad()
             }
         }
         catch (Exception ex)
         {
             errorText.text = "Error loading model file: " + ex.Message;
-            UnityEngine.Debug.LogError("Error loading model file: " + ex.Message);
+            UnityEngine.Debug.LogError(errorText.text);
         }
+
         loadingModel = false;
     }
 
@@ -758,7 +779,7 @@ public class ComponentMaker : MonoBehaviour
             }
         }
 
-        
+
 
         // Add file names to the dropdown
         fileDropdown.AddOptions(displayNames);

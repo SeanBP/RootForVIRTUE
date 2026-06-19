@@ -168,8 +168,8 @@ public class EventLoader : MonoBehaviour
 
     public string filename = "NCDIS_Q2=100_Pythia8.json";
     private string lastFilename = "NCDIS_Q2=100_Pythia8.json";
-    private string targetVersion = "3.0.0";
-    private List<string> compatibleVersions = new List<string> { };
+    private string targetVersion = "3.1.0";
+    private List<string> compatibleVersions = new List<string> { "3.0.0" };
     private float timeStep = 0.05f;
     public float rate = 5f; //speed of light is [rate] m/s
     public InputField rateField;

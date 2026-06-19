@@ -12,7 +12,6 @@ public class PauseMenu : MonoBehaviour
 
     public GameObject navigationMenu;
     public GameObject mainMenu;
-    public GameObject fileMenu;
     public GameObject modelMenu;
     public GameObject eventMenu;
     public GameObject cameraMenu;
@@ -38,10 +37,10 @@ public class PauseMenu : MonoBehaviour
     private float offset = 2000f;
     private bool inTour = false;
     public GameObject tourNavigationMenu;
-    private float navigationMenuHideOffset = -1100f;
-    private float tourNavigationMenuHideOffset = -752f;
+    private float navigationMenuHideOffset = -920f;
+    private float tourNavigationMenuHideOffset = -754f;
 
-    private string pdfFileName = "VIRTUE_User_Guide_V3_0_0.pdf";
+    private string pdfFileName = "VIRTUE_User_Guide_V3_1_0.pdf";
 
     private bool isMuted = false;
     private float previousVolume = 0.05f;
@@ -68,7 +67,6 @@ public class PauseMenu : MonoBehaviour
     {
         initialMenuPositions[tourMenu] = tourMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[mainMenu] = mainMenu.GetComponent<RectTransform>().anchoredPosition;
-        initialMenuPositions[fileMenu] = fileMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[modelMenu] = modelMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[eventMenu] = eventMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[cameraMenu] = cameraMenu.GetComponent<RectTransform>().anchoredPosition;
@@ -263,7 +261,6 @@ public class PauseMenu : MonoBehaviour
     public void EventMenu() => OpenMenu(eventMenu);
     public void CameraMenu() => OpenMenu(cameraMenu);
     public void ModelMenu() => OpenMenu(modelMenu);
-    public void FileMenu() => OpenMenu(fileMenu);
     public void TourMenu() => OpenMenu(tourMenu);
 
     public void Exit() => Application.Quit();

@@ -18,7 +18,6 @@ public class PauseMenu : MonoBehaviour
 
     public GameObject navigationMenu;
     public GameObject mainMenu;
-    public GameObject fileMenu;
     public GameObject modelMenu;
     public GameObject eventMenu;
     public GameObject cameraMenu;
@@ -41,6 +40,7 @@ public class PauseMenu : MonoBehaviour
 
     public TMP_Dropdown modelDropdown;
     public TMP_Dropdown eventDropdown;
+    public TMP_Dropdown tourDropdown;
 
 
     public UnityEngine.UI.Text errorText;
@@ -69,7 +69,6 @@ public class PauseMenu : MonoBehaviour
     {
         // Store the initial position of each menu (relative to its starting position)
         initialMenuPositions[mainMenu] = mainMenu.GetComponent<RectTransform>().anchoredPosition;
-        initialMenuPositions[fileMenu] = fileMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[modelMenu] = modelMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[eventMenu] = eventMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[cameraMenu] = cameraMenu.GetComponent<RectTransform>().anchoredPosition;
@@ -78,7 +77,6 @@ public class PauseMenu : MonoBehaviour
 
         // Set the initial positions
         menuPositions[mainMenu] = initialMenuPositions[mainMenu] + new Vector3(offset, 0, 0);
-        menuPositions[fileMenu] = initialMenuPositions[fileMenu] + new Vector3(offset, 0, 0);
         menuPositions[modelMenu] = initialMenuPositions[modelMenu] + new Vector3(offset, 0, 0);
         menuPositions[eventMenu] = initialMenuPositions[eventMenu] + new Vector3(offset, 0, 0);
         menuPositions[cameraMenu] = initialMenuPositions[cameraMenu] + new Vector3(offset, 0, 0);
@@ -100,10 +98,13 @@ public class PauseMenu : MonoBehaviour
     private void Update()
     {
         // Check if eventDropdown is opened
-        if (IsDropdownOpen(eventDropdown) && IsDropdownOpen(modelDropdown))
+        if (
+        (IsDropdownOpen(eventDropdown) && IsDropdownOpen(modelDropdown)) ||
+        (IsDropdownOpen(eventDropdown) && IsDropdownOpen(tourDropdown)) ||
+        (IsDropdownOpen(modelDropdown) && IsDropdownOpen(tourDropdown))
+        )
         {
             HideDrops();
-
         }
 
     }
@@ -118,6 +119,7 @@ public class PauseMenu : MonoBehaviour
     {
         modelDropdown.Hide();
         eventDropdown.Hide();
+        tourDropdown.Hide();
     }
 
     public void OpenMenu(GameObject menu)
@@ -241,11 +243,6 @@ public class PauseMenu : MonoBehaviour
     public void ModelMenu()
     {
         OpenMenu(modelMenu);
-    }
-
-    public void FileMenu()
-    {
-        OpenMenu(fileMenu);
     }
 
     public void CameraMenu()

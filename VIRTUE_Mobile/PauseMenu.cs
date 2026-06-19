@@ -24,7 +24,6 @@ public class PauseMenu : MonoBehaviour
 
     public GameObject navigationMenu;
     public GameObject mainMenu;
-    public GameObject fileMenu;
     public GameObject modelMenu;
     public GameObject eventMenu;
     public GameObject tourMenu;
@@ -47,12 +46,13 @@ public class PauseMenu : MonoBehaviour
     private float slideSpeed = 10f;
     private bool isTransitioning = false;
     private float offset = 3000f;
+    private float containerOffset = -1015f;
     public GameObject swiper;
 
 
     public UnityEngine.UI.Text errorText;
 
-    private string pdfFileName = "VIRTUE_User_Guide_V2_2_0.pdf";
+    private string pdfFileName = "VIRTUE_User_Guide_V3_1_0.pdf";
 
     public void ChangeVolume(float volume)
     {
@@ -68,7 +68,7 @@ public class PauseMenu : MonoBehaviour
         MoveMenusToUnselectedPositions();
         currentActiveMenu = null;
 
-        SetMenu(navigationMenu, initialMenuPositions[navigationMenu] + new Vector3(0, -1200f, 0));
+        SetMenu(navigationMenu, initialMenuPositions[navigationMenu] + new Vector3(0, containerOffset, 0));
         GameIsPaused = false;
     }
 
@@ -76,7 +76,6 @@ public class PauseMenu : MonoBehaviour
     {
         // Store the initial position of each menu (relative to its starting position)
         initialMenuPositions[mainMenu] = mainMenu.GetComponent<RectTransform>().anchoredPosition;
-        initialMenuPositions[fileMenu] = fileMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[modelMenu] = modelMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[eventMenu] = eventMenu.GetComponent<RectTransform>().anchoredPosition;
         initialMenuPositions[tourMenu] = tourMenu.GetComponent<RectTransform>().anchoredPosition;
@@ -85,7 +84,6 @@ public class PauseMenu : MonoBehaviour
 
         // Set the initial positions
         menuPositions[mainMenu] = initialMenuPositions[mainMenu] + new Vector3(offset, 0, 0);
-        menuPositions[fileMenu] = initialMenuPositions[fileMenu] + new Vector3(offset, 0, 0);
         menuPositions[modelMenu] = initialMenuPositions[modelMenu] + new Vector3(offset, 0, 0);
         menuPositions[eventMenu] = initialMenuPositions[eventMenu] + new Vector3(offset, 0, 0);
         menuPositions[tourMenu] = initialMenuPositions[tourMenu] + new Vector3(offset, 0, 0);
@@ -249,7 +247,7 @@ public class PauseMenu : MonoBehaviour
     {
         if (isTransitioning)
             return;
-        StartCoroutine(SlideMenu(navigationMenu, initialMenuPositions[navigationMenu] + new Vector3(0, -1200f, 0)));
+        StartCoroutine(SlideMenu(navigationMenu, initialMenuPositions[navigationMenu] + new Vector3(0, containerOffset, 0)));
 
 
         credits.SetActive(false);
@@ -305,11 +303,6 @@ public class PauseMenu : MonoBehaviour
     public void ModelMenu()
     {
         OpenMenu(modelMenu);
-    }
-
-    public void FileMenu()
-    {
-        OpenMenu(fileMenu);
     }
 
 

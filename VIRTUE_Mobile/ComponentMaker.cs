@@ -84,8 +84,8 @@ public class ComponentMaker : MonoBehaviour
     private float scale = 1.0f;
     private float lineThickness = 0.01f;
     public UnityEngine.UI.Text detectorText;
-    private string targetVersion = "3.0.0";
-    private List<string> compatibleVersions = new List<string> { };
+    private string targetVersion = "3.1.0";
+    private List<string> compatibleVersions = new List<string> { "3.0.0" };
     private List<string> fileNames = new List<string>();
     private List<string> displayNames = new List<string>();
     public TMP_Dropdown fileDropdown;
@@ -104,6 +104,7 @@ public class ComponentMaker : MonoBehaviour
     public GameObject models;
     private List<float> detectorPartAlphas = new List<float>();
     private string modelTextCache = "";
+    private GameObject activeModel;
 
     private List<string> acceptedExtensions = new List<string>
     {
@@ -456,6 +457,7 @@ public class ComponentMaker : MonoBehaviour
         TagNthLevelChildren(myLoadedGameObject, "Detector", 1);
         myLoadedGameObject.SetActive(false);
         detectorParts.Add(myLoadedGameObject);
+        activeModel = myLoadedGameObject;
         loadingModel = false;
     }
 
@@ -534,29 +536,14 @@ public class ComponentMaker : MonoBehaviour
     }
     public void ToggleMenagerie()
     {
+        if (activeModel == null)
+            return;
 
-        if (!menagerieActive)
-        {
-            models.SetActive(false);
-            // Deactivate detector parts
-            for (int i = 0; i < detectorParts.Count; i++)
-            {
-                detectorParts[i].SetActive(false);
-            }
-            menagerieActive = true;
-            modelText.text = "Show Model";
-        }
-        else
-        {
-            models.SetActive(true);
-            // Activate detector parts
-            for (int i = 0; i < detectorParts.Count; i++)
-            {
-                detectorParts[i].SetActive(true);
-            }
-            modelText.text = "Hide Model";
-            menagerieActive = false;
-        }
+        bool newState = !activeModel.activeSelf;
+        activeModel.SetActive(newState);
+
+        menagerieActive = !newState;
+        modelText.text = newState ? "Hide Model" : "Show Model";
     }
 
     public void LoadFile()
@@ -660,6 +647,7 @@ public class ComponentMaker : MonoBehaviour
                 if (selectedObject != null)
                 {
                     selectedObject.gameObject.SetActive(true);
+                    activeModel = selectedObject.gameObject;
                     detectorText.text = selectedObject.name;
                     try
                     {
@@ -769,6 +757,14 @@ public class ComponentMaker : MonoBehaviour
                         detectorPartAlphas.Add(0f);
                     }
                 }
+                GameObject root = new GameObject("Loaded JSON Model");
+
+                foreach (GameObject part in detectorParts)
+                {
+                    part.transform.SetParent(root.transform, true);
+                }
+
+                activeModel = root;
             }
             else
             {
